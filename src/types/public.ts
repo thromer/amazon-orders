@@ -1,7 +1,7 @@
 import { AmazonOrdersImpl } from '../lib/amazonOrders.ts'
 
 export interface AmazonOrders {
-  getOrderHistory(options: OrderHistoryOptions): OrderHistoryResult
+  getOrderHistory(options: OrderHistoryOptions): Promise<OrderHistoryResult>
   getOrder(orderNumber: string): Promise<OrderDetail>  
 }
 
@@ -40,7 +40,7 @@ export interface OrderDetail {
   finalized?: boolean
 }
 
-interface ItemDetail {
+export interface ItemDetail {
   description: string
   seller: string
   supplier: string
