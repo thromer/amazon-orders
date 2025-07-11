@@ -1,0 +1,32 @@
+{
+  "name": "@thromer/amazon-orders",
+  "version": "0.1.0",
+  "description": "Retrieve Amazon order details",
+  "keywords": [
+    "amazon",
+    "invoices",
+    "orders"
+  ],
+  "homepage": "https://github.com/thromer/amazon-orders#readme",
+  "bugs": {
+    "url": "https://github.com/thromer/amazon-orders/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thromer/amazon-orders.git"
+  },
+  "license": "MIT",
+  "author": "Ted Romer",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
