@@ -1,4 +1,4 @@
-import { Fetcher, FetchResponse /*, RateLimiter */ } from '../types/internal.ts'
+import { Fetcher, FetchResponse /*, RateLimiter */ } from './types.ts'
 
 export class HttpFetcher implements Fetcher {
   // private rateLimiter: RateLimiter

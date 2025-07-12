@@ -2,9 +2,9 @@ import { describe, expect, test } from 'vitest'
 
 import { readFileSync, readdirSync } from 'fs'
 import { join } from 'path'
-import { getOrderNumbers } from '../lib/getOrderNumbers.ts'
+import { AmazonOrdersImpl } from '../lib/amazonOrders.ts'
 import { MockFetcher } from './mockFetcher.ts'
-import { TestData } from './types.ts'
+import { TestData, createOrderHistoryOptions } from './types.ts'
 
 const fixturesDir = join(__dirname, 'fixtures', 'getOrderNumbers')
 const testCases = readdirSync(fixturesDir)
@@ -15,9 +15,12 @@ testCases.forEach((testCase) => {
     const testData: TestData = JSON.parse(
       readFileSync(join(testDir, 'test.json'), 'utf-8')
     )
-    const mockFetcher = new MockFetcher(testData.mockResponses || [])
-    const result = await getOrderNumbers(testData.input, mockFetcher)
-    expect(result).toEqual(testData.expected)
+    console.log(testData)
+    const amazonOrders = new AmazonOrdersImpl({
+      fetcher: new MockFetcher(testData.mockResponses || [])})
+    const result = await amazonOrders.getOrderHistory(createOrderHistoryOptions(testData.input))
+    const syncResult = { ...result, orders: await Array.fromAsync(result.orders) }
+    expect(syncResult).toEqual(testData.expected)
   })
 })
 
@@ -29,12 +32,11 @@ describe('getOrderNumbers', () => {
       text: async () => ''
     }
     
-    const mockFetcher = new MockFetcher([mockResponse])
-    const result = await getOrderNumbers({}, mockFetcher)
-    
-    expect(result.orders).toHaveLength(0)
-    expect(result.total).toBe(0)
-    expect(result.hasMore).toBe(false)
+    const amazonOrders = new AmazonOrdersImpl({
+      fetcher: new MockFetcher([mockResponse])})
+    const result = await amazonOrders.getOrderHistory({dateRange: {start: new Date(), end: new Date()}})
+    const syncResult = { ...result, orders: await Array.fromAsync(result.orders) }
+    expect(syncResult.orders).toHaveLength(0)
   })
   
   test('should handle HTTP errors', async () => {
@@ -44,9 +46,9 @@ describe('getOrderNumbers', () => {
       text: async () => 'Internal Server Error'
     }
     
-    const mockFetcher = new MockFetcher([mockResponse])
-    
-    await expect(getOrderNumbers({}, mockFetcher)).rejects.toThrow(
+    const amazonOrders = new AmazonOrdersImpl({
+      fetcher: new MockFetcher([mockResponse])})
+    await expect(amazonOrders.getOrderHistory({dateRange: {start: new Date(), end: new Date()}})).rejects.toThrow(
       'HTTP 500: Failed to fetch order numbers'
     )
   })

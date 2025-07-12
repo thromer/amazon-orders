@@ -7,7 +7,7 @@ export interface FetchResponse {
 export interface AmazonOrdersDependencies {
   fetcher: Fetcher
 }
-o
+
 export interface Fetcher {
   fetch(url: string): Promise<FetchResponse>
 }

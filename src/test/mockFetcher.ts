@@ -1,4 +1,4 @@
-import { Fetcher, FetchResponse } from '../types/internal.ts'
+import { Fetcher, FetchResponse } from '../lib/types.ts'
 
 export class MockFetcher implements Fetcher {
   private responses: FetchResponse[]

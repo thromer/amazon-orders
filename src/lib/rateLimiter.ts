@@ -1,4 +1,4 @@
-import { RateLimiter } from '../types/internal.ts'
+import { RateLimiter } from './types.ts'
 
 export class TokenBucketRateLimiter implements RateLimiter {
   private tokens: number

@@ -1,7 +1,6 @@
-import { AmazonOrders, OrderHistoryOptions, OrderHistoryResult, OrderSummary, OrderDetail } from '../types/public.ts'
-import { AmazonOrdersDependencies } from '../types/internal.ts'
+import { AmazonOrders, Currency, OrderHistoryOptions, OrderHistoryResult, OrderSummary, OrderDetail } from '../index.ts'
 import { HttpFetcher } from './httpFetcher.ts'
-import { Fetcher } from '../types/internal.ts'
+import { AmazonOrdersDependencies, Fetcher } from './types.ts'
 
 // import { TokenBucketRateLimiter } from './rateLimiter.ts'
 
@@ -22,17 +21,28 @@ export class AmazonOrdersImpl implements AmazonOrders {
       }
       new OrderSummaryImpl(this, "123", "https://TODO")
       return {
-	orders: {
-	  [Symbol.asyncIterator]: async function* () {}
-	}
+	orders: (async function*(): AsyncIterable<OrderSummary> {})()
       }
     } catch (error) {
       throw new Error(`Failed to get order numbers: ${error instanceof Error ? error.message : error}`)
     }
   }
 
+  // TODO complain if subtotal != preTaxTotal
   async getOrder(_: string): Promise<OrderDetail> {
-    return OrderDetail{}  // TODO fill in the fields ...
+    return {
+      date: new Date(),
+      paymentMethod: "TODO",
+      currency: Currency.USD,
+      subtotal: 1729,
+      tax: 172,
+      preTaxTotal: 1729,
+      grandTotal: 1729 + 172,
+      shippingAndHandling: 0,
+      discounts: [],
+      items: [],
+      shippingAddress: "Somewhere",
+    }
   }
 }
 
@@ -46,6 +56,6 @@ class OrderSummaryImpl implements OrderSummary {
     this.invoiceUrl = invoiceUrl
   }
   getDetail(): Promise<OrderDetail> { 
-    return this.client.getOrderDetail(this.invoiceUrl)
+    return this.client.getOrder(this.invoiceUrl)
   }
 }

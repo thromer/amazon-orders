@@ -1,0 +1,14 @@
+{
+    "input": {
+	"dateRange": {
+	    "start": "2024-12-01",
+	    "end": "2024-12-07"
+	}
+    },
+    "expected": {
+	"orders": []
+    },
+    "mockResponses": [
+	{ "status": 200 }
+    ]
+}

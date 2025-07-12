@@ -1,11 +1,56 @@
-// TODO why not skip the level of indirection to types/public.ts?
+import { AmazonOrdersImpl } from './lib/amazonOrders.ts'
 
-// TODO invalid syntax
-export function { createAmazonOrders } from './types/public.ts'
+export interface AmazonOrders {
+  getOrderHistory(options: OrderHistoryOptions): Promise<OrderHistoryResult>
+  getOrder(orderNumber: string): Promise<OrderDetail>
+}
 
-export type {
-  AmazonOrders,
-  OrderHistoryResult,
-  OrderSummary,
-  OrderDetail,
-} from './types/public.ts'
+export function createAmazonOrders(): AmazonOrders {
+  return new AmazonOrdersImpl()
+}
+
+export interface OrderHistoryOptions {
+  dateRange: {
+    start: Date
+    end: Date
+  }
+}
+
+export interface OrderHistoryResult {
+  orders: AsyncIterable<OrderSummary>
+}
+
+export interface OrderSummary {
+  orderNumber: string
+  getDetail(): Promise<OrderDetail>
+}
+
+export enum Currency {
+  USD,
+}
+
+export interface OrderDetail {
+  date: Date
+  paymentMethod: string
+  currency: Currency
+  subtotal: number
+  tax: number
+  preTaxTotal: number
+  grandTotal: number
+  shippingAndHandling: number
+  discounts: Array<{ description: string; amount: number }>
+  items: ItemDetail[]
+  shippingAddress: string
+  finalized?: boolean
+}
+
+export interface ItemDetail {
+  description: string
+  seller: string
+  supplier: string
+  quantity: number
+  itemPrice: number
+  expectedDeliveryDate?: Date
+  actualDeliveryDate?: Date
+  shippingDate?: Date
+}
