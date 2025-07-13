@@ -2,6 +2,12 @@
   "name": "@thromer/amazon-orders",
   "version": "0.1.0",
   "description": "Retrieve Amazon order details",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "parse-invoice": "dist/bin/parse-invoice.js"
+  },
   "keywords": [
     "amazon",
     "invoices",
@@ -17,15 +23,16 @@
   },
   "license": "MIT",
   "author": "Ted Romer",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "parse-invoice": "npm run build && node dist/bin/parse-invoice.js"
   },
   "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "jsdom": "^26.1.0",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   }

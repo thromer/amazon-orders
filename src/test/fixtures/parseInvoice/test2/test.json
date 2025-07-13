@@ -1,0 +1,6 @@
+{
+    "html": "invoice-clean.html",
+    "expected": {
+	"orders": []
+    }
+}
