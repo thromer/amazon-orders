@@ -20,6 +20,16 @@ export class InvoiceParser {
     const grandTotal = this.getAmount('Grand Total:')
     const shippingAndHandling = this.getAmount('Shipping & Handling:')
     
+    const items = this.parseItems(doc)
+    
+    // Validate that items total equals subtotal
+    const itemsTotal = items.reduce((sum, item) => sum + (item.itemPrice * item.quantity), 0)
+    if (itemsTotal !== subtotal) {
+      throw new InvoiceParserError(
+        `Items total != subtotal: expected ${this.milliDollarsToString(subtotal)}, got ${this.milliDollarsToString(itemsTotal)}`
+      )
+    }
+    
     // Validate calculations
     const discountSum = discounts.reduce((sum, discount) => sum + discount.amount, 0)
     const expectedPreTaxTotal = subtotal + shippingAndHandling + discountSum
@@ -46,7 +56,7 @@ export class InvoiceParser {
       grandTotal,
       shippingAndHandling,
       discounts,
-      items: this.parseItems(doc),
+      items,
       shippingAddress: this.parseShippingAddress(doc)
     }
   }
