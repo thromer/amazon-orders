@@ -11,24 +11,59 @@ export class InvoiceParser {
   private amountMap: Map<string, number> = new Map()
 
   parseInvoice(doc: Document): OrderDetail {
-    this.parseAmounts(doc)
+    const { amounts, discounts } = this.parseAmounts(doc)
+    this.amountMap = amounts
+    
+    const subtotal = this.getAmount('Item(s) Subtotal:')
+    const tax = this.getAmount('Estimated tax to be collected:')
+    const preTaxTotal = this.getAmount('Total before tax:')
+    const grandTotal = this.getAmount('Grand Total:')
+    const shippingAndHandling = this.getAmount('Shipping & Handling:')
+    
+    // Validate amounts are non-negative
+    this.validateNonNegative('Item(s) Subtotal:', subtotal)
+    this.validateNonNegative('Estimated tax to be collected:', tax)
+    this.validateNonNegative('Total before tax:', preTaxTotal)
+    this.validateNonNegative('Grand Total:', grandTotal)
+    this.validateNonNegative('Shipping & Handling:', shippingAndHandling)
+    
+    // Validate calculations
+    const discountSum = discounts.reduce((sum, discount) => sum + discount.amount, 0)
+    const expectedPreTaxTotal = subtotal + shippingAndHandling + discountSum
+    const expectedGrandTotal = tax + preTaxTotal
+    
+    if (Math.abs(preTaxTotal - expectedPreTaxTotal) > 0.01) {
+      throw new InvoiceParserError(
+        `Total before tax validation failed: expected ${expectedPreTaxTotal.toFixed(2)}, got ${preTaxTotal.toFixed(2)}`
+      )
+    }
+    
+    if (Math.abs(grandTotal - expectedGrandTotal) > 0.01) {
+      throw new InvoiceParserError(
+        `Grand total validation failed: expected ${expectedGrandTotal.toFixed(2)}, got ${grandTotal.toFixed(2)}`
+      )
+    }
+    
     return {
       schemaVersion,
       date: this.parseOrderDate(doc),
       paymentMethod: this.parsePaymentMethod(doc),
       currency: Currency.USD,
-      subtotal: this.getAmount('Item(s) Subtotal:'),
-      tax: this.getAmount('Estimated tax to be collected:'),
-      preTaxTotal: this.getAmount('Total before tax:'),
-      grandTotal: this.getAmount('Grand Total:'),
-      shippingAndHandling: this.getAmount('Shipping & Handling:'),
-      // discounts: [], // TODO: Parse discounts
+      subtotal,
+      tax,
+      preTaxTotal,
+      grandTotal,
+      shippingAndHandling,
+      discounts,
       items: this.parseItems(doc),
       shippingAddress: this.parseShippingAddress(doc)
     }
   }
 
-  private parseAmounts(doc: Document): void {
+  private parseAmounts(doc: Document): { amounts: Map<string, number>, discounts: Array<{ description: string; amount: number }> } {
+    const amounts = new Map<string, number>()
+    const discounts: Array<{ description: string; amount: number }> = []
+    
     const rows = doc.querySelectorAll('.od-line-item-row')
     for (const row of rows) {
       const labelElement = row.querySelector('.od-line-item-row-label')
@@ -39,11 +74,19 @@ export class InvoiceParser {
         if (label && amountText) {
           const amount = parseFloat(amountText.replace(/[$,]/g, ''))
           if (!isNaN(amount)) {
-            this.amountMap.set(label, amount)
+            if (amount < 0) {
+              // Negative amounts are discounts
+              discounts.push({ description: label, amount })
+            } else {
+              // Positive amounts go to the amounts map
+              amounts.set(label, amount)
+            }
           }
         }
       }
     }
+    
+    return { amounts, discounts }
   }
 
   private getAmount(label: string): number {
@@ -52,6 +95,12 @@ export class InvoiceParser {
       throw new InvoiceParserError(`Amount for "${label}" not found`)
     }
     return amount
+  }
+
+  private validateNonNegative(label: string, amount: number): void {
+    if (amount < 0) {
+      throw new InvoiceParserError(`Amount for "${label}" must be non-negative, got ${amount}`)
+    }
   }
 
   private parseOrderDate(doc: Document): Date {
