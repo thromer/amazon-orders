@@ -43,7 +43,7 @@ export class AmazonOrdersImpl implements AmazonOrders {
       preTaxTotal: 1729,
       grandTotal: 1729 + 172,
       shippingAndHandling: 0,
-      // discounts: [],
+      discounts: [],
       items: [],
       shippingAddress: ["Somewhere"],
     }

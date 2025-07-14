@@ -19,36 +19,12 @@ export class InvoiceParser {
     const preTaxTotal = this.getAmount('Total before tax:')
     const grandTotal = this.getAmount('Grand Total:')
     const shippingAndHandling = this.getAmount('Shipping & Handling:')
-    
-    const items = this.parseItems(doc)
-    
-    // Validate that items total equals subtotal
-    const itemsTotal = items.reduce((sum, item) => sum + (item.itemPrice * item.quantity), 0)
-    if (itemsTotal !== subtotal) {
-      throw new InvoiceParserError(
-        `Items total != subtotal: expected ${this.milliDollarsToString(subtotal)}, got ${this.milliDollarsToString(itemsTotal)}`
-      )
-    }
-    
-    // Validate calculations
-    const discountSum = discounts.reduce((sum, discount) => sum + discount.amount, 0)
-    const expectedPreTaxTotal = subtotal + shippingAndHandling + discountSum
-    const expectedGrandTotal = tax + preTaxTotal
-    if (preTaxTotal !== expectedPreTaxTotal) {
-      throw new InvoiceParserError(
-        `preTaxTotal != subtotal + shippingAndHandling + discounts: expected ${this.milliDollarsToString(expectedPreTaxTotal)}, got ${this.milliDollarsToString(preTaxTotal)}`
-      )
-    }
-    if (grandTotal !== expectedGrandTotal) {
-      throw new InvoiceParserError(
-        `grandTotal != tax + preTaxTotal: expected ${this.milliDollarsToString(expectedGrandTotal)}, got ${this.milliDollarsToString(grandTotal)}`
-      )
-    }
-    
-    return {
+    const items = InvoiceParser.parseItems(doc)
+
+    const detail = {
       schemaVersion,
-      date: this.parseOrderDate(doc),
-      paymentMethod: this.parsePaymentMethod(doc),
+      date: InvoiceParser.parseOrderDate(doc),
+      paymentMethod: InvoiceParser.parsePaymentMethod(doc),
       currency: Currency.USD,
       subtotal,
       tax,
@@ -57,7 +33,31 @@ export class InvoiceParser {
       shippingAndHandling,
       discounts,
       items,
-      shippingAddress: this.parseShippingAddress(doc)
+      shippingAddress: InvoiceParser.parseShippingAddress(doc)
+    }
+    console.log(JSON.stringify(detail, null, 2))
+    InvoiceParser.validateOrderDetail(detail)
+    return detail
+  }
+  private static validateOrderDetail(detail: OrderDetail) {
+    const itemsTotal = detail.items.reduce((sum, item) => sum + (item.itemPrice * item.quantity), 0)
+    if (itemsTotal !== detail.subtotal) {
+      throw new InvoiceParserError(
+        `Items total != subtotal: expected ${InvoiceParser.milliDollarsToString(detail.subtotal)}, got ${InvoiceParser.milliDollarsToString(itemsTotal)}`
+      )
+    }
+    const discountSum = detail.discounts.reduce((sum, discount) => sum + discount.amount, 0)
+    const expectedPreTaxTotal = detail.subtotal + detail.shippingAndHandling + discountSum
+    const expectedGrandTotal = detail.tax + detail.preTaxTotal
+    if (detail.preTaxTotal !== expectedPreTaxTotal) {
+      throw new InvoiceParserError(
+        `preTaxTotal != subtotal + shippingAndHandling + discounts: expected ${InvoiceParser.milliDollarsToString(expectedPreTaxTotal)}, got ${InvoiceParser.milliDollarsToString(detail.preTaxTotal)}`
+      )
+    }
+    if (detail.grandTotal !== expectedGrandTotal) {
+      throw new InvoiceParserError(
+        `grandTotal != tax + preTaxTotal: expected ${InvoiceParser.milliDollarsToString(expectedGrandTotal)}, got ${InvoiceParser.milliDollarsToString(detail.grandTotal)}`
+      )
     }
   }
 
@@ -73,19 +73,20 @@ export class InvoiceParser {
         const label = labelElement.textContent?.trim()
         const amountText = amountElement.textContent?.trim()
         if (label && amountText) {
-          const amountInMilliDollars = this.parseAmountToMilliDollars(amountText)
+          const amountInMilliDollars = InvoiceParser.parseAmountToMilliDollars(amountText)
           if (amountInMilliDollars < 0) {
             // Negative amounts are discounts
             discounts.push({ description: label, amount: amountInMilliDollars })
           } else {
             // Non-negative amounts go to the amounts map
-	    // Throw if label is already present in the map  AI!
+	    if (amounts.has(label)) {
+	      throw new InvoiceParserError(`Multiple occurrences of ${label}`)
+	    }
             amounts.set(label, amountInMilliDollars)
           }
         }
       }
     }
-    
     return { amounts, discounts }
   }
 
@@ -97,7 +98,7 @@ export class InvoiceParser {
     return amount
   }
 
-  private parseAmountToMilliDollars(amountText: string): number {
+  private static parseAmountToMilliDollars(amountText: string): number {
     const cleanText = amountText.replace(/[$,]/g, '')
     const formatRegex = /^-?\d+\.\d{2}$/
     if (!formatRegex.test(cleanText)) {
@@ -110,11 +111,11 @@ export class InvoiceParser {
     return Math.round(dollarAmount * 1000)
   }
 
-  private milliDollarsToString(milliDollars: number): string {
+  private static milliDollarsToString(milliDollars: number): string {
     return `${(milliDollars / 1000).toFixed(2)}`
   }
 
-  private parseOrderDate(doc: Document): Date {
+  private static parseOrderDate(doc: Document): Date {
     const dateElement = doc.querySelector('[data-component="orderDate"]')
     if (!dateElement) {
       throw new InvoiceParserError('Order date element not found')
@@ -130,7 +131,7 @@ export class InvoiceParser {
     return date
   }
 
-  private parsePaymentMethod(doc: Document): string {
+  private static parsePaymentMethod(doc: Document): string {
     const paymentElement = doc.querySelector('.pmts-payments-instrument-detail-box-paystationpaymentmethod')
     if (!paymentElement) {
       throw new InvoiceParserError('Payment method element not found')
@@ -142,7 +143,7 @@ export class InvoiceParser {
     return paymentText.replace(/\s+/g, ' ')
   }
 
-  private parseShippingAddress(doc: Document): Array<string> {
+  private static parseShippingAddress(doc: Document): Array<string> {
     const addressElement = doc.querySelector('[data-component="shippingAddress"]')
     if (!addressElement) {
       throw new InvoiceParserError('Shipping address element not found')
@@ -160,7 +161,7 @@ export class InvoiceParser {
     return lines
   }
 
-  private parseItems(doc: Document): ItemDetail[] {
+  private static parseItems(doc: Document): ItemDetail[] {
     const items: ItemDetail[] = []
     const itemElements = doc.querySelectorAll('[data-component="purchasedItems"] .a-fixed-left-grid')
     
@@ -182,7 +183,7 @@ export class InvoiceParser {
       if (!priceText) {
         throw new InvoiceParserError('Item price not found')
       }
-      const itemPrice = this.parseAmountToMilliDollars(priceText)
+      const itemPrice = InvoiceParser.parseAmountToMilliDollars(priceText)
       const quantityElement = itemElement.querySelector('.od-item-view-qty span')
       const quantityText = quantityElement?.textContent?.trim()
       let quantity = 1

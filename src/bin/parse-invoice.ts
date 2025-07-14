@@ -5,7 +5,6 @@ import { JSDOM } from 'jsdom'
 import { parseInvoice } from '../index.ts'
 
 async function main() {
-  console.log(process.argv)
   const htmlPath = process.argv[2]
   if (!htmlPath) {
     console.error('Usage: parse-invoice <htmlPath>')
