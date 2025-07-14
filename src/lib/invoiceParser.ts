@@ -32,15 +32,15 @@ export class InvoiceParser {
     const expectedPreTaxTotal = subtotal + shippingAndHandling + discountSum
     const expectedGrandTotal = tax + preTaxTotal
     
-    if (Math.abs(preTaxTotal - expectedPreTaxTotal) > 0.01) {
+    if (preTaxTotal !== expectedPreTaxTotal) {
       throw new InvoiceParserError(
-        `Total before tax validation failed: expected ${expectedPreTaxTotal.toFixed(2)}, got ${preTaxTotal.toFixed(2)}`
+        `Total before tax validation failed: expected ${this.milliDollarsToString(expectedPreTaxTotal)}, got ${this.milliDollarsToString(preTaxTotal)}`
       )
     }
     
-    if (Math.abs(grandTotal - expectedGrandTotal) > 0.01) {
+    if (grandTotal !== expectedGrandTotal) {
       throw new InvoiceParserError(
-        `Grand total validation failed: expected ${expectedGrandTotal.toFixed(2)}, got ${grandTotal.toFixed(2)}`
+        `Grand total validation failed: expected ${this.milliDollarsToString(expectedGrandTotal)}, got ${this.milliDollarsToString(grandTotal)}`
       )
     }
     
@@ -72,15 +72,13 @@ export class InvoiceParser {
         const label = labelElement.textContent?.trim()
         const amountText = amountElement.textContent?.trim()
         if (label && amountText) {
-          const amount = parseFloat(amountText.replace(/[$,]/g, ''))
-          if (!isNaN(amount)) {
-            if (amount < 0) {
-              // Negative amounts are discounts
-              discounts.push({ description: label, amount })
-            } else {
-              // Positive amounts go to the amounts map
-              amounts.set(label, amount)
-            }
+          const amountInMilliDollars = this.parseAmountToMilliDollars(amountText)
+          if (amountInMilliDollars < 0) {
+            // Negative amounts are discounts
+            discounts.push({ description: label, amount: amountInMilliDollars })
+          } else {
+            // Positive amounts go to the amounts map
+            amounts.set(label, amountInMilliDollars)
           }
         }
       }
@@ -97,9 +95,33 @@ export class InvoiceParser {
     return amount
   }
 
+  private parseAmountToMilliDollars(amountText: string): number {
+    // Remove $ and commas, then validate format
+    const cleanText = amountText.replace(/[$,]/g, '')
+    
+    // Check if it matches the required format: optional minus, digits, dot, exactly 2 digits
+    const formatRegex = /^-?\d+\.\d{2}$/
+    if (!formatRegex.test(cleanText)) {
+      throw new InvoiceParserError(`Amount "${amountText}" does not match required format (must end with .XX)`)
+    }
+    
+    const dollarAmount = parseFloat(cleanText)
+    if (isNaN(dollarAmount)) {
+      throw new InvoiceParserError(`Amount "${amountText}" is not a valid number`)
+    }
+    
+    // Convert to milliDollars (multiply by 1000)
+    return Math.round(dollarAmount * 1000)
+  }
+
+  private milliDollarsToString(milliDollars: number): string {
+    const dollars = milliDollars / 1000
+    return `$${dollars.toFixed(2)}`
+  }
+
   private validateNonNegative(label: string, amount: number): void {
     if (amount < 0) {
-      throw new InvoiceParserError(`Amount for "${label}" must be non-negative, got ${amount}`)
+      throw new InvoiceParserError(`Amount for "${label}" must be non-negative, got ${this.milliDollarsToString(amount)}`)
     }
   }
 
@@ -171,10 +193,7 @@ export class InvoiceParser {
       if (!priceText) {
         throw new InvoiceParserError('Item price not found')
       }
-      const itemPrice = parseFloat(priceText.replace(/[$,]/g, ''))
-      if (isNaN(itemPrice)) {
-        throw new InvoiceParserError(`Item price not parseable as float: ${priceText}`)
-      }
+      const itemPrice = this.parseAmountToMilliDollars(priceText)
       const quantityElement = itemElement.querySelector('.od-item-view-qty span')
       const quantityText = quantityElement?.textContent?.trim()
       let quantity = 1

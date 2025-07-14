@@ -41,12 +41,12 @@ export interface OrderDetail {
   date: Date
   paymentMethod: string
   currency: Currency
-  subtotal: number
-  tax: number
-  preTaxTotal: number
-  grandTotal: number
-  shippingAndHandling: number
-  discounts: Array<{ description: string; amount: number }>
+  subtotal: number // in milliDollars
+  tax: number // in milliDollars
+  preTaxTotal: number // in milliDollars
+  grandTotal: number // in milliDollars
+  shippingAndHandling: number // in milliDollars
+  discounts: Array<{ description: string; amount: number }> // amounts in milliDollars
   items: ItemDetail[]
   shippingAddress: Array<string>
   finalized?: boolean
@@ -57,7 +57,7 @@ export interface ItemDetail {
   seller?: string
   supplier?: string
   quantity: number
-  itemPrice: number
+  itemPrice: number // in milliDollars
   // expectedDeliveryDate?: Date
   // actualDeliveryDate?: Date
   // shippingDate?: Date
