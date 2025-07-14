@@ -46,7 +46,7 @@ export interface OrderDetail {
   preTaxTotal: number
   grandTotal: number
   shippingAndHandling: number
-  // discounts: Array<{ description: string; amount: number }>
+  discounts: Array<{ description: string; amount: number }>
   items: ItemDetail[]
   shippingAddress: Array<string>
   finalized?: boolean
