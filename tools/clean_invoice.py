@@ -8,7 +8,7 @@ def main():
         for script in soup.find_all('script'):
             script.decompose()
         for comment in soup.find_all(string=lambda text: isinstance(text, Comment)):
-            _ = comment.extract()        
+            _ = comment.extract()
         print(soup.prettify())
 
 if __name__ == "__main__":

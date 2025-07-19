@@ -62,4 +62,3 @@ export interface ItemDetail {
   // actualDeliveryDate?: Date
   // shippingDate?: Date
 }
-

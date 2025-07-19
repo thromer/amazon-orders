@@ -205,7 +205,7 @@ export class InvoiceParser {
       }
       items.push(item)
     }
-    
+
     return items
   }
 }
