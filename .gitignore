@@ -2,3 +2,6 @@ node_modules/
 dist/
 *~
 .aider*
+
+# Don't commit data with potential PII
+*.html
