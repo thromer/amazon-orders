@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 
-import { readFileSync, readdirSync } from 'fs'
-import { join } from 'path'
+import { readFileSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { AmazonOrdersImpl } from '../lib/amazonOrders.ts'
 import { MockFetcher } from './mockFetcher.ts'
 import { TestData, createOrderHistoryOptions } from './types.ts'
@@ -12,10 +12,14 @@ const testCases = readdirSync(fixturesDir)
 testCases.forEach((testCase) => {
   const testDir = join(fixturesDir, testCase)
   test(testCase, async () => {
-    const testData: TestData = JSON.parse(
-      readFileSync(join(testDir, 'test.json'), 'utf-8')
-    )
-    console.log(testData)
+    let testData: TestData
+    try {
+      testData = JSON.parse(
+	readFileSync(join(testDir, 'test.json'), 'utf-8')
+      )
+    } catch (error) {
+      throw new Error(`Failed to parse test fixture ${testCase}: ${(error as Error).message}`)
+    }
     const amazonOrders = new AmazonOrdersImpl({
       fetcher: new MockFetcher(testData.mockResponses || [])})
     const result = await amazonOrders.getOrderHistory(createOrderHistoryOptions(testData.input))

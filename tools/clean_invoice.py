@@ -2,7 +2,7 @@ import sys
 
 from bs4 import BeautifulSoup, Comment
 
-def main():
+def main() -> None:
     with open(sys.argv[1]) as f:
         soup = BeautifulSoup(f, "html5lib")
         for script in soup.find_all('script'):

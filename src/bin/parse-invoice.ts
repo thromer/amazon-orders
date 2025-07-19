@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'fs'
+import { readFileSync } from 'node:fs'
 import { JSDOM } from 'jsdom'
 import { parseInvoice } from '../index.ts'
 
-async function main() {
+function main() {
   const htmlPath = process.argv[2]
   if (!htmlPath) {
     console.error('Usage: parse-invoice <htmlPath>')

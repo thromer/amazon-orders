@@ -6,7 +6,7 @@ export class TokenBucketRateLimiter implements RateLimiter {
   private readonly maxTokens: number
   private readonly refillRate: number
 
-  constructor(tokensPerSecond: number = 10) {
+  constructor(tokensPerSecond = 10) {
     this.maxTokens = tokensPerSecond
     this.refillRate = tokensPerSecond
     this.tokens = tokensPerSecond
@@ -14,15 +14,17 @@ export class TokenBucketRateLimiter implements RateLimiter {
   }
 
   async acquire(): Promise<void> {
-    this.refillTokens()
-    
-    if (this.tokens < 1) {
+    while (true) {
+      this.refillTokens()
+
+      if (this.tokens >= 1) {
+        this.tokens--
+        return
+      }
+
       const waitTime = (1 / this.refillRate) * 1000
       await new Promise(resolve => setTimeout(resolve, waitTime))
-      return this.acquire()
     }
-    
-    this.tokens--
   }
 
   private refillTokens(): void {

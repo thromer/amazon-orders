@@ -7,10 +7,11 @@ import { AmazonOrdersDependencies, Fetcher } from './types.ts'
 export class AmazonOrdersImpl implements AmazonOrders {
   private fetcher: Fetcher
 
-  constructor(dependencies: AmazonOrdersDependencies={
-    fetcher: new HttpFetcher()}) {
-      this.fetcher = dependencies.fetcher;
-    }
+  constructor(dependencies: AmazonOrdersDependencies = {
+    fetcher: new HttpFetcher()
+  }) {
+    this.fetcher = dependencies.fetcher;
+  }
 
   async getOrderHistory(options: OrderHistoryOptions): Promise<OrderHistoryResult> {
     try {

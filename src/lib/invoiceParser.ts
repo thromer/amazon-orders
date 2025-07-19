@@ -103,7 +103,7 @@ export class InvoiceParser {
     if (!formatRegex.test(cleanText)) {
       throw new InvoiceParserError(`Amount "${amountText}" does not match required format (must end with .XX)`)
     }
-    const dollarAmount = parseFloat(cleanText)
+    const dollarAmount = Number.parseFloat(cleanText)
     if (isNaN(dollarAmount)) {
       throw new InvoiceParserError(`Amount "${amountText}" is not a valid number`)
     }
@@ -187,7 +187,7 @@ export class InvoiceParser {
       const quantityText = quantityElement?.textContent?.trim()
       let quantity = 1
       if (quantityText && quantityText !== '') {
-        quantity = parseInt(quantityText, 10)
+        quantity = Number.parseInt(quantityText, 10)
         if (isNaN(quantity)) {
           throw new InvoiceParserError(`Item quantity not parseable as integer: ${quantityText}`)
         }
