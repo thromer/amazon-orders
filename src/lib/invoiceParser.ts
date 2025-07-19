@@ -35,7 +35,6 @@ export class InvoiceParser {
       items,
       shippingAddress: InvoiceParser.parseShippingAddress(doc)
     }
-    console.log(JSON.stringify(detail, null, 2))
     InvoiceParser.validateOrderDetail(detail)
     return detail
   }
