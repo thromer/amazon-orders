@@ -174,7 +174,7 @@ export class InvoiceParser {
     const itemElements = doc.querySelectorAll('[data-component="purchasedItems"] .a-fixed-left-grid')
     const statusElements = doc.querySelectorAll('[data-component="shipmentStatus"]');
     if (itemElements.length != statusElements.length) {
-      throw new InvoiceParserError(`${itemElements.length} items, ${statusElements} shipping status entries`);
+      throw new InvoiceParserError(`${itemElements.length} items, ${statusElements.length} shipping status entries`);
     }
     for (let i = 0; i < itemElements.length; i++) {
       const itemElement = itemElements[i]!;
