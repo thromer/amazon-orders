@@ -58,6 +58,7 @@ export interface ItemDetail {
   supplier?: string
   quantity: number
   itemPrice: number // in milliDollars
+  shippingStatus: string[]
   // expectedDeliveryDate?: Date
   // actualDeliveryDate?: Date
   // shippingDate?: Date

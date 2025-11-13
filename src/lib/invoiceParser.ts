@@ -36,6 +36,7 @@ export class InvoiceParser {
       shippingAddress: InvoiceParser.parseShippingAddress(doc)
     }
     InvoiceParser.validateOrderDetail(detail)
+    console.log(`parseInvoice returning ${JSON.stringify(detail)}`)
     return detail
   }
   private static validateOrderDetail(detail: OrderDetail) {
@@ -147,24 +148,37 @@ export class InvoiceParser {
     if (!addressElement) {
       throw new InvoiceParserError('Shipping address element not found')
     }
-    const addressText = addressElement.textContent?.trim()
-    if (!addressText) {
-      throw new InvoiceParserError('Shipping address text not found')
+    let lines = [];
+    const DELIMITER = '\u0000';
+    for (const node of [...addressElement.querySelectorAll('li span')]) {
+      const clone = node.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll('br').forEach(br => {
+	br.replaceWith(DELIMITER);
+      });
+      const text = clone.textContent ?? "";
+      const nodeLines = text.split(DELIMITER).map(line => {
+	return line.replace(/\s+/g, ' ').trim();
+      });
+      lines.push(...nodeLines);
     }
-    const lines = addressText.split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0 && line !== 'Ship to')
     if (lines.length === 0) {
       throw new InvoiceParserError('No shipping address lines found')
     }
+    lines = lines.filter(s => s.length > 0)
+    console.log(`parseShippingAddress returning ${JSON.stringify(lines)}`)
     return lines
   }
 
   private static parseItems(doc: Document): ItemDetail[] {
     const items: ItemDetail[] = []
     const itemElements = doc.querySelectorAll('[data-component="purchasedItems"] .a-fixed-left-grid')
-    
-    for (const itemElement of itemElements) {
+    const statusElements = doc.querySelectorAll('[data-component="shipmentStatus"]');
+    if (itemElements.length != statusElements.length) {
+      throw new InvoiceParserError(`${itemElements.length} items, ${statusElements} shipping status entries`);
+    }
+    for (let i = 0; i < itemElements.length; i++) {
+      const itemElement = itemElements[i]!;
+      const statusElement = statusElements[i]!;
       const titleElement = itemElement.querySelector('[data-component="itemTitle"] a')
       const sellerElement = itemElement.querySelector('[data-component="orderedMerchant"] span')
       const supplierElement = itemElement.querySelector('[data-component="supplierOfRecord"] span')
@@ -192,10 +206,14 @@ export class InvoiceParser {
           throw new InvoiceParserError(`Item quantity not parseable as integer: ${quantityText}`)
         }
       }
+      const shippingStatus = [...statusElement.querySelectorAll('.od-status-message')]
+	.map(e => e.textContent?.trim())
+	.filter((s): s is string => !!s && s.length > 0);
       const item: ItemDetail = {
         description,
         quantity,
-        itemPrice
+        itemPrice,
+	shippingStatus,
       }
       if (seller) {
         item.seller = seller
