@@ -172,13 +172,13 @@ export class InvoiceParser {
   private static parseItems(doc: Document): ItemDetail[] {
     const items: ItemDetail[] = []
     const itemElements = doc.querySelectorAll('[data-component="purchasedItems"] .a-fixed-left-grid')
-    const statusElements = doc.querySelectorAll('[data-component="shipmentStatus"]');
-    if (itemElements.length != statusElements.length) {
-      throw new InvoiceParserError(`${itemElements.length} items, ${statusElements.length} shipping status entries`);
-    }
+    // const statusElements = doc.querySelectorAll('[data-component="shipmentStatus"]');
+    // if (itemElements.length != statusElements.length) {
+    //   throw new InvoiceParserError(`${itemElements.length} items, ${statusElements.length} shipping status entries`);
+    // }
     for (let i = 0; i < itemElements.length; i++) {
       const itemElement = itemElements[i]!;
-      const statusElement = statusElements[i]!;
+      // const statusElement = statusElements[i]!;
       const titleElement = itemElement.querySelector('[data-component="itemTitle"] a')
       const sellerElement = itemElement.querySelector('[data-component="orderedMerchant"] span')
       const supplierElement = itemElement.querySelector('[data-component="supplierOfRecord"] span')
@@ -206,14 +206,14 @@ export class InvoiceParser {
           throw new InvoiceParserError(`Item quantity not parseable as integer: ${quantityText}`)
         }
       }
-      const shippingStatus = [...statusElement.querySelectorAll('.od-status-message')]
-	.map(e => e.textContent?.trim())
-	.filter((s): s is string => !!s && s.length > 0);
+      // const shippingStatus = [...statusElement.querySelectorAll('.od-status-message')]
+      // 	.map(e => e.textContent?.trim())
+      // 	.filter((s): s is string => !!s && s.length > 0);
       const item: ItemDetail = {
         description,
         quantity,
         itemPrice,
-	shippingStatus,
+	// shippingStatus,
       }
       if (seller) {
         item.seller = seller
