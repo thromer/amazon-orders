@@ -36,6 +36,8 @@ export class AmazonOrdersImpl implements AmazonOrders {
     await this.fetcher.fetch(url)
     return {
       schemaVersion,
+      orderId: "123456",
+      isDigital: false,
       date: new Date(),
       paymentMethod: "TODO",
       currency: Currency.USD,

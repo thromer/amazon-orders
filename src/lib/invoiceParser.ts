@@ -11,19 +11,31 @@ export class InvoiceParser {
   private amountMap: Map<string, number> = new Map()
 
   parseInvoice(doc: Document): OrderDetail {
-    const { amounts, discounts } = this.parseAmounts(doc)
-    this.amountMap = amounts
-    
-    const subtotal = this.getAmount('Item(s) Subtotal:')
-    const tax = this.getAmount('Estimated tax to be collected:')
-    const preTaxTotal = this.getAmount('Total before tax:')
-    const grandTotal = this.getAmount('Grand Total:')
-    const shippingAndHandling = this.getAmount('Shipping & Handling:')
+    const orderId = InvoiceParser.parseOrderId(doc);
+    const isDigital = InvoiceParser.isDigitalOrderId(orderId);
+    const date = InvoiceParser.parseOrderDate(doc)
+    const { amounts, discounts } = InvoiceParser.parseAmounts(doc);
+    this.amountMap = amounts;
+    const subtotal = this.getAmount('item(s) subtotal:')
+    const tax = isDigital ?
+      this.getAmount('tax collected:') :
+      this.getAmount('estimated tax to be collected:')
+    const preTaxTotal = isDigital ?
+      subtotal :
+      this.getAmount('total before tax:')
+    const grandTotal = isDigital ?
+      this.getAmount('total for this order:') :
+      this.getAmount('grand total:')
+    const shippingAndHandling = isDigital ?
+      0 :
+      this.getAmount('shipping & handling:')
     const items = InvoiceParser.parseItems(doc)
 
     const detail = {
       schemaVersion,
-      date: InvoiceParser.parseOrderDate(doc),
+      orderId,
+      isDigital,
+      date,
       paymentMethod: InvoiceParser.parsePaymentMethod(doc),
       currency: Currency.USD,
       subtotal,
@@ -61,16 +73,25 @@ export class InvoiceParser {
     }
   }
 
-  private parseAmounts(doc: Document): { amounts: Map<string, number>, discounts: Array<{ description: string; amount: number }> } {
+  private static parseOrderId(doc: Document): string {
+    return doc.querySelector('[data-component="orderId"]')?.textContent?.trim() ||
+      (() => { throw new Error('orderId missing') })();
+  }
+
+  private static isDigitalOrderId(orderId: string): boolean {
+    return orderId[0] === "D";
+  }
+
+  private static parseAmounts(doc: Document): { amounts: Map<string, number>, discounts: Array<{ description: string; amount: number }> } {
     const amounts = new Map<string, number>()
     const discounts: Array<{ description: string; amount: number }> = []
-    
+
     const rows = doc.querySelectorAll('.od-line-item-row')
     for (const row of rows) {
       const labelElement = row.querySelector('.od-line-item-row-label')
       const amountElement = row.querySelector('.od-line-item-row-content')
       if (labelElement && amountElement) {
-        const label = labelElement.textContent?.trim()
+        const label = labelElement.textContent?.trim().toLowerCase()
         const amountText = amountElement.textContent?.trim()
         if (label && amountText) {
           const amountInMilliDollars = InvoiceParser.parseAmountToMilliDollars(amountText)
@@ -183,7 +204,7 @@ export class InvoiceParser {
       const sellerElement = itemElement.querySelector('[data-component="orderedMerchant"] span')
       const supplierElement = itemElement.querySelector('[data-component="supplierOfRecord"] span')
       const priceElement = itemElement.querySelector('[data-component="unitPrice"] .a-offscreen')
-      
+
       const description = titleElement?.textContent?.trim()
       if (!description) {
         throw new InvoiceParserError('Item description not found')

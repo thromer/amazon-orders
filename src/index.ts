@@ -36,8 +36,11 @@ export enum Currency {
   USD,
 }
 
+// TODO: probably should have OrderDetail = RegularOrder | DigitalOrder or something.
 export interface OrderDetail {
   schemaVersion: string
+  orderId: string
+  isDigital: boolean
   date: Date
   paymentMethod: string
   currency: Currency
