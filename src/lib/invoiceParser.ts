@@ -153,7 +153,7 @@ export class InvoiceParser {
   }
 
   private static parsePaymentMethod(doc: Document): string {
-    const paymentElement = doc.querySelector('.pmts-payments-instrument-detail-box-paystationpaymentmethod')
+    const paymentElement = doc.querySelector('div[data-testid="payment-instrument-text-wrapper"]')
     if (!paymentElement) {
       throw new InvoiceParserError('Payment method element not found')
     }
